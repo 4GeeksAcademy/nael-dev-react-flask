@@ -29,6 +29,11 @@ export default function storeReducer(store, action = {}) {
           ...store,
           user
         }
+        case "Logout":
+          return{
+            ...store,
+            user:null,
+          }
     default:
       throw Error('Unknown action.');
   }    

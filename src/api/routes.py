@@ -6,7 +6,7 @@ from api.models import db, User
 from api.utils import generate_sitemap, APIException
 from flask_cors import CORS
 from flask_jwt_extended import create_access_token, jwt_required, get_jwt_identity
-
+from sqlalchemy import select
 api = Blueprint('api', __name__)
 
 # Allow CORS requests to this API
@@ -22,18 +22,27 @@ def handle_hello():
 
     return jsonify(response_body), 200
 
-@api.route('/signup', methods = ['POST'])
+
+@api.route('/signup', methods=['POST'])
 def create_user():
     body = request.get_json()
-    if 'email' not in body or 'password' not in body or 'is_active' not in body:
-        return jsonify ({"err": "Bad request"})
+
+    if 'email' not in body or 'password' not in body:
+        return jsonify({"err": "Bad request"})
+    
+    stmt = select(User).where(User.email == body['email'])
+    existing_user = db.session.execute(stmt).scalar_one_or_none()
+
+    if existing_user:
+        return jsonify({"error": "User already exists"}), 409
+    
     user = User()
     user.email = body['email']
     user.password = body['password']
-    user.is_active = body['is_active']
+    user.is_active = True
     db.session.add(user)
     db.session.commit()
-    return jsonify({"ok": "Usuario created"})
+    return jsonify({"ok": "User created"}),201
 
 @api.route('/login', methods=['POST'])
 def login():
